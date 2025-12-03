@@ -72,13 +72,12 @@ public final class MutableInt extends Number implements PropertyInt, Comparable<
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Integer i) {
-            return this.value == i;
-        }
-        if (obj instanceof MutableInt m) {
-            return this.value == m.intValue();
-        }
-        return false;
+        return switch (obj) {
+            case Integer i -> this.value == i;
+            case MutableInt m -> this.value == m.intValue();
+            case Number n -> this.value == n.intValue();
+            case null, default -> false;
+        };
     }
 
     @Override

@@ -50,13 +50,11 @@ public final class MutableBool implements PropertyBool, Comparable<MutableBool> 
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Boolean lhs) {
-            return this.value == lhs;
-        }
-        if (obj instanceof MutableBool lhs) {
-            return this.value == lhs.getAsBoolean();
-        }
-        return false;
+        return switch (obj) {
+            case Boolean lhs -> this.value == lhs;
+            case MutableBool lhs -> this.value == lhs.getAsBoolean();
+            case null, default -> false;
+        };
     }
 
     @Override

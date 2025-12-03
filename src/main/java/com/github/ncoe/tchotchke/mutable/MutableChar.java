@@ -43,13 +43,11 @@ public final class MutableChar implements PropertyChar, Comparable<MutableChar> 
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Character ch) {
-            return this.value == ch;
-        }
-        if (obj instanceof MutableChar lhs) {
-            return this.value == lhs.getAsChar();
-        }
-        return false;
+        return switch (obj) {
+            case Character ch -> this.value == ch;
+            case MutableChar lhs -> this.value == lhs.getAsChar();
+            case null, default -> false;
+        };
     }
 
     @Override

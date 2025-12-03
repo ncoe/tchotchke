@@ -32,6 +32,7 @@ public class MutableTest {
 
         Assert.assertEquals(refA.compareTo(refB), 1);
 
+        Assert.assertEquals(refA.equals(null), false);
         Assert.assertEquals(refA.equals(false), false);
         Assert.assertEquals(refA.equals(true), true);
         Assert.assertEquals(refA.equals(refB), false);
@@ -51,7 +52,7 @@ public class MutableTest {
         Assert.assertFalse(refA.logicalXor(refB));
     }
 
-    @SuppressWarnings({"EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
+    @SuppressWarnings({"ConstantValue", "EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
     @Test
     public void mutChar() {
         MutableChar refA = new MutableChar('a');
@@ -63,6 +64,7 @@ public class MutableTest {
 
         Assert.assertEquals(refA.compareTo(refB), -1);
 
+        Assert.assertFalse(refA.equals(null));
         Assert.assertTrue(refA.equals('a'));
         Assert.assertTrue(refA.equals(refA));
         Assert.assertFalse(refA.equals('b'));
@@ -73,7 +75,7 @@ public class MutableTest {
         Assert.assertEquals(refA.getAsChar(), 'z');
     }
 
-    @SuppressWarnings({"EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
+    @SuppressWarnings({"ConstantValue", "EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
     @Test
     public void mutInt() {
         MutableInt refA = new MutableInt();
@@ -90,9 +92,12 @@ public class MutableTest {
 
         Assert.assertEquals(refA.compareTo(refB), -1);
 
+        Assert.assertFalse(refA.equals(null));
         Assert.assertTrue(refA.equals(0));
+        Assert.assertTrue(refA.equals(0.0));
         Assert.assertTrue(refA.equals(refA));
         Assert.assertFalse(refA.equals(1));
+        Assert.assertFalse(refA.equals(1.0));
         Assert.assertFalse(refA.equals(refB));
         Assert.assertFalse(refA.equals('a'));
 
@@ -113,7 +118,7 @@ public class MutableTest {
         Assert.assertEquals(refA.getAndAccumulate((left, right) -> left / right, 3), 15);
     }
 
-    @SuppressWarnings({"EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
+    @SuppressWarnings({"ConstantValue", "EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
     @Test
     public void mutLong() {
         MutableLong refA = new MutableLong();
@@ -126,14 +131,16 @@ public class MutableTest {
         Assert.assertEquals(refA.hashCode(), 0);
         Assert.assertEquals(refA.toString(), "0");
 
-
         MutableLong refB = new MutableLong(1);
 
         Assert.assertEquals(refA.compareTo(refB), -1);
 
+        Assert.assertFalse(refA.equals(null));
         Assert.assertTrue(refA.equals(0L));
+        Assert.assertTrue(refA.equals(0.0));
         Assert.assertTrue(refA.equals(refA));
         Assert.assertFalse(refA.equals(1L));
+        Assert.assertFalse(refA.equals(1.0));
         Assert.assertFalse(refA.equals(refB));
         Assert.assertFalse(refA.equals('a'));
 
@@ -154,11 +161,39 @@ public class MutableTest {
         Assert.assertEquals(refA.getAndAccumulate((left, right) -> left / right, 3), 15);
     }
 
+    @SuppressWarnings({"ConstantValue", "DataFlowIssue", "EqualsBetweenInconvertibleTypes", "SimplifiableAssertion"})
     @Test
     public void mutObject() {
-        Mutable<String> ref = new Mutable<>();
-        Assert.assertNull(ref.get());
-        ref.accept("Huge Success!!");
-        Assert.assertNotNull(ref.get());
+        Mutable<String> refA = new Mutable<>();
+        Assert.assertNull(refA.get());
+        Assert.assertNotEquals(refA.hashCode(), 0);
+        Assert.assertNotNull(refA.toString());
+        Assert.assertTrue(refA.equals(null));
+
+        Mutable<String> refB = new Mutable<>("Huge Success!!");
+        Assert.assertFalse(refA.equals(refB));
+
+        refA.accept("Huge Success!!");
+        Assert.assertNotNull(refA.get());
+        Assert.assertNotEquals(refA.hashCode(), 0);
+        Assert.assertEquals(refA.toString(), "Huge Success!!");
+        Assert.assertFalse(refA.equals("Huge Success!!"));
+
+        Assert.assertTrue(refA.equals(refB));
+    }
+
+    @Test
+    public void mutCompare() {
+        MutableCompare<String> refA = new MutableCompare<>();
+        Assert.assertEquals(refA.compareTo(null), 1);
+
+        MutableCompare<String> refB = new MutableCompare<>();
+        Assert.assertEquals(refA.compareTo(refB), 0);
+
+        refB.accept("rhs");
+        Assert.assertEquals(refA.compareTo(refB), -1);
+
+        refA.accept("lhs");
+        Assert.assertEquals(refA.compareTo(refB), -6);
     }
 }

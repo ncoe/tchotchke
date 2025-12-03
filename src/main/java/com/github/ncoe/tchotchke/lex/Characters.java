@@ -22,6 +22,9 @@ public final class Characters {
     public static final int CP_GS = 0x1d;
     public static final int CP_RS = 0x1e;
     public static final int CP_US = 0x1f;
+    public static final int CP_DQ = 0x22;
+    public static final int CP_QT = 0x27;
+    public static final int CP_BACKSLASH = 0x5c;
     public static final int CP_DEL = 0x7f;
 
     public static final CharacterPredicate NUL = CharacterPredicate.of(CP_NUL);
@@ -36,6 +39,9 @@ public final class Characters {
     public static final CharacterPredicate GS = CharacterPredicate.of(CP_GS);
     public static final CharacterPredicate RS = CharacterPredicate.of(CP_RS);
     public static final CharacterPredicate US = CharacterPredicate.of(CP_US);
+    public static final CharacterPredicate DQ = CharacterPredicate.of(CP_DQ);
+    public static final CharacterPredicate QT = CharacterPredicate.of(CP_QT);
+    public static final CharacterPredicate BACKSLASH = CharacterPredicate.of(CP_BACKSLASH);
     public static final CharacterPredicate DEL = CharacterPredicate.of(CP_DEL);
 
     public static final CharacterPredicate ASCII = CharacterPredicate.inclusive(CP_NUL, CP_DEL);

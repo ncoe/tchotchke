@@ -61,28 +61,48 @@ public class TokenizerTest {
 
     @Test(expectedExceptions = LexException.class)
     public void error() {
-        LexStateMachine<String> machine = LexStateMachine
+        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
             .builder("start")
             .add("start", Characters.DIGIT, LexAction.SHIFT)
-            .build();
-        Tokenizer<String> tokenizer = new Tokenizer<>(machine);
+            .build());
         long num = tokenizer.lex("oops").count();
         Assert.assertEquals(num, 0);
     }
 
     @Test
     public void limit() {
-        LexStateMachine<String> machine = LexStateMachine
+        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
             .builder("start")
             .add("start", CharacterPredicate.of('o'), LexAction.SHIFT, "o")
             .add("start", CharacterPredicate.of('p'), LexAction.SHIFT_REDUCE)
             .add("start", CharacterPredicate.any(), LexAction.SHIFT)
             .add("o", CharacterPredicate.of('o'), LexAction.SHIFT)
             .add("o", CharacterPredicate.any(), LexAction.REDUCE)
-            .build();
-        Tokenizer<String> tokenizer = new Tokenizer<>(machine);
+            .build());
 
         long num = tokenizer.lex("oops").limit(1).count();
         Assert.assertEquals(num, 1);
+    }
+
+    @Test
+    public void skip() {
+        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
+            .builder("start")
+            .add("start", Characters.QT, LexAction.SKIP, "string")
+            .add("start", CharacterPredicate.any(), LexAction.SHIFT, "error")
+            .add("string", Characters.HT, LexAction.SHIFT)
+            .add("string", Characters.CONTROL, LexAction.SHIFT, "error")
+            .add("string", Characters.QT, LexAction.SKIP_REDUCE, "start")
+            .add("string", Characters.BACKSLASH, LexAction.SHIFT, "string-escape")
+            .add("string", Characters.ASCII, LexAction.SHIFT)
+            .add("string", CharacterPredicate.any(), LexAction.SHIFT, "error")
+            .add("string-escape", Characters.CONTROL, LexAction.SHIFT, "error")
+            .add("string-escape", Characters.ASCII, LexAction.SHIFT, "string")
+            .add("string-escape", CharacterPredicate.any(), LexAction.SHIFT, "error")
+            .add("error", CharacterPredicate.any(), LexAction.SHIFT)
+            .build());
+
+        List<String> tokenList = tokenizer.lex("'hello world''oops'").toList();
+        Assert.assertEquals(tokenList, List.of("hello world", "oops"));
     }
 }

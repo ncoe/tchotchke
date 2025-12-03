@@ -128,6 +128,14 @@ public final class LexStateMachine<T> {
                         T token = factory.invoke(name, text);
                         yield downstream.test(token);
                     }
+                    case SKIP -> true;
+                    case SKIP_REDUCE -> {
+                        String name = nameMap.get(prev);
+                        String text = consume();
+
+                        T token = factory.invoke(name, text);
+                        yield downstream.test(token);
+                    }
                 };
             }
         }

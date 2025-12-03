@@ -20,4 +20,12 @@ public enum LexAction {
      * Append the character, and build the token.
      */
     SHIFT_REDUCE,
+    /**
+     * Do not append the character.
+     */
+    SKIP,
+    /**
+     * Do not append the character, and build the token.
+     */
+    SKIP_REDUCE,
 }

@@ -72,13 +72,12 @@ public final class MutableLong extends Number implements PropertyLong, Comparabl
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Long i) {
-            return this.value == i;
-        }
-        if (obj instanceof MutableLong m) {
-            return this.value == m.longValue();
-        }
-        return false;
+        return switch (obj) {
+            case Long i -> this.value == i;
+            case MutableLong m -> this.value == m.longValue();
+            case Number n -> this.value == n.longValue();
+            case null, default -> false;
+        };
     }
 
     @Override

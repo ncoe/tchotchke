@@ -11,7 +11,7 @@ import com.github.ncoe.tchotchke.property.Property;
  *
  * @param <T> the type of value
  */
-public final class Mutable<T> implements Property<T> {
+public sealed class Mutable<T> implements Property<T> permits MutableCompare {
     private T value;
 
     /**
@@ -31,12 +31,39 @@ public final class Mutable<T> implements Property<T> {
     }
 
     @Override
-    public T get() {
+    public final T get() {
         return this.value;
     }
 
     @Override
-    public void accept(T value) {
+    public final void accept(T value) {
         this.value = value;
+    }
+
+    @Override
+    public int hashCode() {
+        if (this.value != null) {
+            return this.value.hashCode();
+        }
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this.value == null) {
+            return obj == null;
+        }
+        if (obj instanceof Mutable<?> m) {
+            return this.value.equals(m.value);
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public String toString() {
+        if (this.value != null) {
+            return this.value.toString();
+        }
+        return super.toString();
     }
 }
