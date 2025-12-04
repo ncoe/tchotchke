@@ -4,6 +4,8 @@
 
 package com.github.ncoe.tchotchke.lex;
 
+import com.github.ncoe.tchotchke.option.Option;
+
 /**
  * Token Factory
  *
@@ -16,7 +18,8 @@ public interface TokenFactory<T> {
      *
      * @param state the state name
      * @param text  the text
-     * @return the token
+     * @param end   is the final token in the stream
+     * @return the optional token
      */
-    T invoke(String state, String text);
+    Option<T> invoke(String state, String text, boolean end);
 }

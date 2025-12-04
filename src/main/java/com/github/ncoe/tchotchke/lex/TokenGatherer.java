@@ -28,7 +28,7 @@ final class TokenGatherer<T> implements Gatherer<Character, LexStateMachine<T>, 
 
     @Override
     public Integrator<LexStateMachine<T>, Character, T> integrator() {
-        return (state, ch, downstream) -> state.process(ch, downstream::push);
+        return (state, ch, downstream) -> state.process(downstream::push, ch);
     }
 
     @Override

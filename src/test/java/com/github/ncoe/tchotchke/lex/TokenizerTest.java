@@ -5,6 +5,7 @@
 package com.github.ncoe.tchotchke.lex;
 
 import com.github.ncoe.tchotchke.function.CharacterPredicate;
+import com.github.ncoe.tchotchke.option.Option;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -104,5 +105,55 @@ public class TokenizerTest {
 
         List<String> tokenList = tokenizer.lex("'hello world''oops'").toList();
         Assert.assertEquals(tokenList, List.of("hello world", "oops"));
+    }
+
+    @Test
+    public void tokenOption() {
+        CharacterPredicate digit = CharacterPredicate.inclusive('0', '9');
+        CharacterPredicate lower = CharacterPredicate.inclusive('a', 'z');
+        CharacterPredicate space = CharacterPredicate.of(' ');
+        CharacterPredicate upper = CharacterPredicate.inclusive('A', 'Z');
+
+        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
+            .builder("start", (state, text, _) -> {
+                if (text.isEmpty() || "space".equals(state) || "error".equals(state)) {
+                    return Option.none();
+                }
+                return Option.some(text);
+            })
+            .add(space, LexAction.SHIFT, "space")
+            .add(digit, LexAction.SHIFT, "integer")
+            .add(List.of(upper, lower), LexAction.SHIFT, "identifier")
+            .add(CharacterPredicate.any(), LexAction.SHIFT, "error")
+            .begin("space")
+            .add(space, LexAction.SHIFT)
+            .add(CharacterPredicate.any(), LexAction.REDUCE, "start")
+            .begin("integer")
+            .add(digit, LexAction.SHIFT)
+            .add(CharacterPredicate.any(), LexAction.REDUCE, "start")
+            .begin("identifier")
+            .add(List.of(upper, lower), LexAction.SHIFT)
+            .add(CharacterPredicate.any(), LexAction.REDUCE, "start")
+            .begin("error")
+            .add(space, LexAction.REDUCE, "start")
+            .add(digit, LexAction.REDUCE, "start")
+            .add(List.of(upper, lower), LexAction.REDUCE, "start")
+            .add(CharacterPredicate.any(), LexAction.SHIFT)
+            .build());
+        List<String> tokenList = tokenizer.lex("hello world 123").toList();
+        Assert.assertEquals(tokenList, List.of("hello", "world", "123"));
+    }
+
+    @Test(expectedExceptions = LexException.class)
+    public void noInitialState() {
+        LexStateMachine.builder("start").build();
+    }
+
+    @Test(expectedExceptions = LexException.class)
+    public void unknownState() {
+        LexStateMachine
+            .builder("start")
+            .add("start", CharacterPredicate.any(), LexAction.SHIFT, "oops")
+            .build();
     }
 }
