@@ -12,27 +12,27 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
  * Lex State Machine
  *
+ * @param <S> the type of state
  * @param <T> the token type
  */
-public final class LexStateMachine<T> {
-    private record Entry(CharacterPredicate predicate, LexAction action, String next) {
+public final class LexStateMachine<S, T> {
+    private record Entry<S>(CharacterPredicate predicate, LexAction action, S next) {
         //empty
     }
 
     private final StringBuilder builder = new StringBuilder();
-    private final Map<String, List<Entry>> stateMap;
-    private final TokenFactory<T> factory;
-    private final String init;
+    private final Map<S, List<Entry<S>>> stateMap;
+    private final TokenFactory<S, T> factory;
+    private final S init;
 
-    private String state;
+    private S state;
 
-    private LexStateMachine(Map<String, List<Entry>> stateMap, TokenFactory<T> factory, String init) {
+    private LexStateMachine(Map<S, List<Entry<S>>> stateMap, TokenFactory<S, T> factory, S init) {
         this.stateMap = stateMap;
         this.factory = factory;
 
@@ -45,7 +45,7 @@ public final class LexStateMachine<T> {
      *
      * @return a new state machine
      */
-    public LexStateMachine<T> duplicate() {
+    public LexStateMachine<S, T> duplicate() {
         return new LexStateMachine<>(stateMap, factory, init);
     }
 
@@ -54,7 +54,7 @@ public final class LexStateMachine<T> {
      *
      * @return the text
      */
-    public String consume() {
+    String consume() {
         String text = builder.toString();
         builder.setLength(0);
         return text;
@@ -65,17 +65,17 @@ public final class LexStateMachine<T> {
      *
      * @param consumer the consumer
      */
-    void consume(Consumer<T> consumer) {
+    void consume(Predicate<T> consumer) {
         String text = builder.toString();
-        factory
-            .invoke(state, text, true)
-            .ifPresent(consumer);
+        Option<T> tokenOpt = factory.invoke(state, text, true);
+        consume(consumer, tokenOpt);
     }
 
     private boolean consume(Predicate<T> downstream, Option<T> tokenOpt) {
         return switch (tokenOpt) {
             case Option.None<T> _ -> true;
             case Option.Some<T> some -> downstream.test(some.value());
+            case null -> throw new LexException("The token factory must never return null");
         };
     }
 
@@ -91,12 +91,12 @@ public final class LexStateMachine<T> {
     }
 
     private boolean process(Predicate<T> downstream, char ch, int depth) {
-        List<Entry> entryList = stateMap.get(state);
+        List<Entry<S>> entryList = stateMap.get(state);
         Assertion.notNull(entryList, "Unexpected state: %d", state);
         Assertion.isLess(depth, 2, "Bailing from potential stack overflow in state %s", state);
 
-        String prev = state;
-        for (Entry entry : entryList) {
+        S prev = state;
+        for (Entry<S> entry : entryList) {
             if (entry.predicate.test(ch)) {
                 state = entry.next;
 
@@ -139,7 +139,7 @@ public final class LexStateMachine<T> {
      * @param init the initial state name
      * @return the builder
      */
-    public static Builder<String> builder(String init) {
+    public static <S> Builder<S, String> builder(S init) {
         return builder(init, (_, text, end) -> {
             if (end && text.isEmpty()) {
                 return Option.none();
@@ -153,10 +153,11 @@ public final class LexStateMachine<T> {
      *
      * @param init    the initial state name
      * @param factory the token factory
+     * @param <S>     the type of state
      * @param <T>     the type of token
      * @return the builder
      */
-    public static <T> Builder<T> builder(String init, TokenFactory<T> factory) {
+    public static <S, T> Builder<S, T> builder(S init, TokenFactory<S, T> factory) {
         Assertion.notNull(init, "expected an initial state");
         Assertion.notNull(factory, "expected a token factory");
         return new Builder<>(init, factory);
@@ -165,16 +166,17 @@ public final class LexStateMachine<T> {
     /**
      * Lex State Machine Builder
      *
+     * @param <S> the type of state
      * @param <T> the type of token
      */
-    public static final class Builder<T> {
-        private final Map<String, List<Entry>> stateMap = new LinkedHashMap<>();
-        private final TokenFactory<T> factory;
-        private final String init;
+    public static final class Builder<S, T> {
+        private final Map<S, List<Entry<S>>> stateMap = new LinkedHashMap<>();
+        private final TokenFactory<S, T> factory;
+        private final S init;
 
-        private String current;
+        private S current;
 
-        private Builder(String init, TokenFactory<T> factory) {
+        private Builder(S init, TokenFactory<S, T> factory) {
             this.factory = factory;
             this.init = init;
             this.current = init;
@@ -186,7 +188,7 @@ public final class LexStateMachine<T> {
          * @param state the state
          * @return this
          */
-        public Builder<T> begin(String state) {
+        public Builder<S, T> begin(S state) {
             this.current = state;
             return this;
         }
@@ -199,7 +201,7 @@ public final class LexStateMachine<T> {
          * @param action     the action
          * @return this
          */
-        public Builder<T> add(String state, Iterable<CharacterPredicate> predicates, LexAction action) {
+        public Builder<S, T> add(S state, Iterable<CharacterPredicate> predicates, LexAction action) {
             return add(state, predicates, action, state);
         }
 
@@ -210,7 +212,7 @@ public final class LexStateMachine<T> {
          * @param action     the action
          * @return this
          */
-        public Builder<T> add(Iterable<CharacterPredicate> predicates, LexAction action) {
+        public Builder<S, T> add(Iterable<CharacterPredicate> predicates, LexAction action) {
             return add(predicates, action, current);
         }
 
@@ -223,7 +225,7 @@ public final class LexStateMachine<T> {
          * @param next       the next state
          * @return this
          */
-        public Builder<T> add(String state, Iterable<CharacterPredicate> predicates, LexAction action, String next) {
+        public Builder<S, T> add(S state, Iterable<CharacterPredicate> predicates, LexAction action, S next) {
             for (CharacterPredicate predicate : predicates) {
                 add(state, predicate, action, next);
             }
@@ -238,7 +240,7 @@ public final class LexStateMachine<T> {
          * @param next       the next state
          * @return this
          */
-        public Builder<T> add(Iterable<CharacterPredicate> predicates, LexAction action, String next) {
+        public Builder<S, T> add(Iterable<CharacterPredicate> predicates, LexAction action, S next) {
             for (CharacterPredicate predicate : predicates) {
                 add(predicate, action, next);
             }
@@ -253,7 +255,7 @@ public final class LexStateMachine<T> {
          * @param action    the action
          * @return this
          */
-        public Builder<T> add(String state, CharacterPredicate predicate, LexAction action) {
+        public Builder<S, T> add(S state, CharacterPredicate predicate, LexAction action) {
             return add(state, predicate, action, state);
         }
 
@@ -264,7 +266,7 @@ public final class LexStateMachine<T> {
          * @param action    the action
          * @return this
          */
-        public Builder<T> add(CharacterPredicate predicate, LexAction action) {
+        public Builder<S, T> add(CharacterPredicate predicate, LexAction action) {
             return add(predicate, action, current);
         }
 
@@ -276,7 +278,7 @@ public final class LexStateMachine<T> {
          * @param next      the next state
          * @return this
          */
-        public Builder<T> add(CharacterPredicate predicate, LexAction action, String next) {
+        public Builder<S, T> add(CharacterPredicate predicate, LexAction action, S next) {
             return add(current, predicate, action, next);
         }
 
@@ -289,14 +291,14 @@ public final class LexStateMachine<T> {
          * @param next      the next state
          * @return this
          */
-        public Builder<T> add(String state, CharacterPredicate predicate, LexAction action, String next) {
+        public Builder<S, T> add(S state, CharacterPredicate predicate, LexAction action, S next) {
             Assertion.notNull(state, "state cannot be null");
             Assertion.notNull(predicate, "predicate cannot be null");
             Assertion.notNull(action, "action cannot be null");
             Assertion.notNull(next, "next cannot be null");
 
-            List<Entry> elementList = stateMap.computeIfAbsent(state, _ -> new ArrayList<>());
-            elementList.add(new Entry(predicate, action, next));
+            List<Entry<S>> elementList = stateMap.computeIfAbsent(state, _ -> new ArrayList<>());
+            elementList.add(new Entry<>(predicate, action, next));
 
             this.current = state;
             return this;
@@ -307,19 +309,34 @@ public final class LexStateMachine<T> {
          *
          * @return the state machine
          */
-        public LexStateMachine<T> build() {
+        public LexStateMachine<S, T> build() {
+            return build(false);
+        }
+
+        /**
+         * Build the lex state machine.
+         *
+         * @param check check the token factory with all states
+         * @return the state machine
+         */
+        public LexStateMachine<S, T> build(boolean check) {
             if (!stateMap.containsKey(init)) {
                 throw new LexException("No transitions defined for state %s", init);
             }
 
-            for (List<Entry> entryList : stateMap.values()) {
-                for (Entry entry : entryList) {
+            for (List<Entry<S>> entryList : stateMap.values()) {
+                for (Entry<S> entry : entryList) {
                     if (!stateMap.containsKey(entry.next)) {
                         throw new LexException("No transitions defined for state %s", entry.next);
                     }
                 }
             }
 
+            if (check) {
+                for (S state : stateMap.keySet()) {
+                    factory.invoke(state, "", false);
+                }
+            }
             return new LexStateMachine<>(stateMap, factory, init);
         }
     }

@@ -8,23 +8,43 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class ConsumerTest {
-    private void consume(BooleanConsumer consumer, boolean value) {
+    private void consumeBool(BooleanConsumer consumer, boolean value) {
         consumer.andThen(consumer).accept(value);
     }
 
     @Test
     public void consumeBool() {
-        consume(Assert::assertFalse, false);
-        consume(Assert::assertTrue, true);
+        consumeBool(Assert::assertFalse, false);
+        consumeBool(Assert::assertTrue, true);
     }
 
-    private void consume(CharacterConsumer consumer, char ch) {
+    private void consumeByte(ByteConsumer consumer, byte value) {
+        consumer.andThen(consumer).accept(value);
+    }
+
+    @Test
+    public void consumeByte() {
+        consumeByte(value -> Assert.assertEquals(value, 0), (byte) 0);
+        consumeByte(value -> Assert.assertEquals(value, 1), (byte) 1);
+    }
+
+    private void consumeChar(CharacterConsumer consumer, char ch) {
         consumer.andThen(consumer).accept(ch);
     }
 
     @Test
     public void consumeChar() {
-        consume(value -> Assert.assertEquals(value, 'A'), 'A');
-        consume(value -> Assert.assertEquals(value, 'z'), 'z');
+        consumeChar(value -> Assert.assertEquals(value, 'A'), 'A');
+        consumeChar(value -> Assert.assertEquals(value, 'z'), 'z');
+    }
+
+    private void consumeShort(ShortConsumer consumer, short value) {
+        consumer.andThen(consumer).accept(value);
+    }
+
+    @Test
+    public void consumeShort() {
+        consumeShort(value -> Assert.assertEquals(value, 0), (short) 0);
+        consumeShort(value -> Assert.assertEquals(value, 1), (short) 1);
     }
 }

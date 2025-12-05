@@ -11,28 +11,29 @@ import java.util.stream.Gatherer;
 /**
  * Token Gatherer
  *
+ * @param <S> the type of state
  * @param <T> the type of token
  */
 @SuppressWarnings("ClassCanBeRecord")
-final class TokenGatherer<T> implements Gatherer<Character, LexStateMachine<T>, T> {
-    private final LexStateMachine<T> stateMachine;
+final class TokenGatherer<S, T> implements Gatherer<Character, LexStateMachine<S, T>, T> {
+    private final LexStateMachine<S, T> stateMachine;
 
-    TokenGatherer(LexStateMachine<T> stateMachine) {
+    TokenGatherer(LexStateMachine<S, T> stateMachine) {
         this.stateMachine = stateMachine;
     }
 
     @Override
-    public Supplier<LexStateMachine<T>> initializer() {
+    public Supplier<LexStateMachine<S, T>> initializer() {
         return stateMachine::duplicate;
     }
 
     @Override
-    public Integrator<LexStateMachine<T>, Character, T> integrator() {
+    public Integrator<LexStateMachine<S, T>, Character, T> integrator() {
         return (state, ch, downstream) -> state.process(downstream::push, ch);
     }
 
     @Override
-    public BiConsumer<LexStateMachine<T>, Downstream<? super T>> finisher() {
+    public BiConsumer<LexStateMachine<S, T>, Downstream<? super T>> finisher() {
         return (state, downstream) -> state.consume(downstream::push);
     }
 }

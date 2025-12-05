@@ -9,18 +9,18 @@ import com.github.ncoe.tchotchke.util.Assertion;
 import java.util.function.Predicate;
 
 /**
- * Represents a predicate (boolean-valued function) of one {@code char}-valued argument.
- * This is the {@code char}-consuming primitive type specialization of {@link Predicate}.
+ * Represents a predicate (short-valued function) of one {@code short}-valued argument.
+ * This is the {@code short}-consuming primitive type specialization of {@link Predicate}.
  */
 @FunctionalInterface
-public interface CharacterPredicate {
+public interface ShortPredicate {
     /**
      * Evaluates this predicate on the given argument.
      *
-     * @param ch the character
+     * @param s the short
      * @return {@code true} if the input argument matches the predicate, otherwise {@code false}
      */
-    boolean test(char ch);
+    boolean test(short s);
 
     /**
      * Returns a composed predicate that represents a short-circuiting logical AND of this predicate and another.
@@ -34,7 +34,7 @@ public interface CharacterPredicate {
      * @return a composed predicate that represents the short-circuiting
      * logical AND of this predicate and the {@code other} predicate
      */
-    default CharacterPredicate and(CharacterPredicate other) {
+    default ShortPredicate and(ShortPredicate other) {
         Assertion.notNull(other, "the other predicate may not be null");
         return value -> test(value) && other.test(value);
     }
@@ -44,7 +44,7 @@ public interface CharacterPredicate {
      *
      * @return a predicate that represents the logical negation of this predicate
      */
-    default CharacterPredicate negate() {
+    default ShortPredicate negate() {
         return value -> !test(value);
     }
 
@@ -60,7 +60,7 @@ public interface CharacterPredicate {
      * @return a composed predicate that represents the short-circuiting
      * logical OR of this predicate and the {@code other} predicate
      */
-    default CharacterPredicate or(CharacterPredicate other) {
+    default ShortPredicate or(ShortPredicate other) {
         Assertion.notNull(other, "the other predicate may not be null");
         return value -> test(value) || other.test(value);
     }

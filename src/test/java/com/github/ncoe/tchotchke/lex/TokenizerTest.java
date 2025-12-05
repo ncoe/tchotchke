@@ -13,35 +13,47 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 public class TokenizerTest {
-    private static final Tokenizer<String> TOKENIZER = new Tokenizer<>(LexStateMachine
-        .builder("start")
+    private enum LexState {
+        START,
+        SPACE,
+        IDENTIFIER,
+        INTEGER,
+        ERROR,
+    }
+
+    private static final Tokenizer<LexState, String> TOKENIZER = new Tokenizer<>(LexStateMachine
+        .builder(LexState.START)
         //-------------------------------------------------------------------------------
-        .add("start", List.of(Characters.HT, Characters.LF), LexAction.SHIFT, "space")
-        .add("start", Characters.CONTROL, LexAction.SHIFT, "error")
-        .add("start", Characters.SPACE, LexAction.SHIFT, "space")
-        .add("start", Characters.DIGIT, LexAction.SHIFT, "integer")
-        .add("start", List.of(Characters.UPPER, CharacterPredicate.of('_'), Characters.LOWER), LexAction.SHIFT, "identifier")
-        .add("start", Characters.DEL, LexAction.SHIFT, "error")
-        .add("start", Characters.ASCII, LexAction.SHIFT_REDUCE)
-        .add("start", CharacterPredicate.any(), LexAction.SHIFT, "error")
+        .add(List.of(Characters.HT, Characters.LF), LexAction.SHIFT, LexState.SPACE)
+        .add(Characters.CONTROL, LexAction.SHIFT, LexState.ERROR)
+        .add(Characters.SPACE, LexAction.SHIFT, LexState.SPACE)
+        .add(Characters.DIGIT, LexAction.SHIFT, LexState.INTEGER)
+        .add(List.of(Characters.UPPER, Characters.of('_'), Characters.LOWER), LexAction.SHIFT, LexState.IDENTIFIER)
+        .add(Characters.DEL, LexAction.SHIFT, LexState.ERROR)
+        .add(Characters.ASCII, LexAction.SHIFT_REDUCE)
+        .add(Characters.any(), LexAction.SHIFT, LexState.ERROR)
         //-------------------------------------------------------------------------------
-        .add("space", List.of(Characters.HT, Characters.LF), LexAction.SHIFT)
-        .add("space", Characters.SPACE, LexAction.SHIFT)
-        .add("space", CharacterPredicate.any(), LexAction.REDUCE, "start")
+        .begin(LexState.SPACE)
+        .add(List.of(Characters.HT, Characters.LF), LexAction.SHIFT)
+        .add(Characters.SPACE, LexAction.SHIFT)
+        .add(Characters.any(), LexAction.REDUCE, LexState.START)
         //-------------------------------------------------------------------------------
-        .add("identifier", Characters.DIGIT, LexAction.SHIFT)
-        .add("identifier", List.of(Characters.UPPER, CharacterPredicate.of('_'), Characters.LOWER), LexAction.SHIFT)
-        .add("identifier", CharacterPredicate.any(), LexAction.REDUCE, "start")
+        .begin(LexState.IDENTIFIER)
+        .add(Characters.DIGIT, LexAction.SHIFT)
+        .add(List.of(Characters.UPPER, Characters.of('_'), Characters.LOWER), LexAction.SHIFT)
+        .add(Characters.any(), LexAction.REDUCE, LexState.START)
         //-------------------------------------------------------------------------------
-        .add("integer", Characters.DIGIT, LexAction.SHIFT)
-        .add("integer", CharacterPredicate.any(), LexAction.REDUCE, "start")
+        .begin(LexState.INTEGER)
+        .add(Characters.DIGIT, LexAction.SHIFT)
+        .add(Characters.any(), LexAction.REDUCE, LexState.START)
         //-------------------------------------------------------------------------------
-        .add("error", List.of(Characters.HT, Characters.LF), LexAction.REDUCE, "start")
-        .add("error", Characters.CONTROL, LexAction.SHIFT)
-        .add("error", Characters.ASCII, LexAction.REDUCE, "start")
-        .add("error", CharacterPredicate.any(), LexAction.SHIFT)
+        .begin(LexState.ERROR)
+        .add(List.of(Characters.HT, Characters.LF), LexAction.REDUCE, LexState.START)
+        .add(Characters.CONTROL, LexAction.SHIFT)
+        .add(Characters.ASCII, LexAction.REDUCE, LexState.START)
+        .add(Characters.any(), LexAction.SHIFT)
         //-------------------------------------------------------------------------------
-        .build());
+        .build(true));
 
     @DataProvider
     public static Object[][] lexProvider() {
@@ -62,7 +74,7 @@ public class TokenizerTest {
 
     @Test(expectedExceptions = LexException.class)
     public void error() {
-        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
+        Tokenizer<String, String> tokenizer = new Tokenizer<>(LexStateMachine
             .builder("start")
             .add("start", Characters.DIGIT, LexAction.SHIFT)
             .build());
@@ -72,35 +84,39 @@ public class TokenizerTest {
 
     @Test
     public void limit() {
-        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
+        Tokenizer<String, String> tokenizer = new Tokenizer<>(LexStateMachine
             .builder("start")
-            .add("start", CharacterPredicate.of('o'), LexAction.SHIFT, "o")
-            .add("start", CharacterPredicate.of('p'), LexAction.SHIFT_REDUCE)
-            .add("start", CharacterPredicate.any(), LexAction.SHIFT)
-            .add("o", CharacterPredicate.of('o'), LexAction.SHIFT)
-            .add("o", CharacterPredicate.any(), LexAction.REDUCE)
+            .add(Characters.of('o'), LexAction.SHIFT, "o")
+            .add(Characters.of('p'), LexAction.SHIFT_REDUCE)
+            .add(Characters.any(), LexAction.SHIFT)
+            .begin("o")
+            .add(Characters.of('o'), LexAction.SHIFT)
+            .add(Characters.any(), LexAction.REDUCE)
             .build());
 
         long num = tokenizer.lex("oops").limit(1).count();
         Assert.assertEquals(num, 1);
+
+        long cnt = tokenizer.lex("ops").limit(1).count();
+        Assert.assertEquals(cnt, 1);
     }
 
     @Test
     public void skip() {
-        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
+        Tokenizer<String, String> tokenizer = new Tokenizer<>(LexStateMachine
             .builder("start")
             .add("start", Characters.QT, LexAction.SKIP, "string")
-            .add("start", CharacterPredicate.any(), LexAction.SHIFT, "error")
-            .add("string", Characters.HT, LexAction.SHIFT)
+            .add("start", Characters.any(), LexAction.SHIFT, "error")
+            .add("string", List.of(Characters.HT, Characters.VT), LexAction.SHIFT)
             .add("string", Characters.CONTROL, LexAction.SHIFT, "error")
             .add("string", Characters.QT, LexAction.SKIP_REDUCE, "start")
             .add("string", Characters.BACKSLASH, LexAction.SHIFT, "string-escape")
             .add("string", Characters.ASCII, LexAction.SHIFT)
-            .add("string", CharacterPredicate.any(), LexAction.SHIFT, "error")
+            .add("string", Characters.any(), LexAction.SHIFT, "error")
             .add("string-escape", Characters.CONTROL, LexAction.SHIFT, "error")
             .add("string-escape", Characters.ASCII, LexAction.SHIFT, "string")
-            .add("string-escape", CharacterPredicate.any(), LexAction.SHIFT, "error")
-            .add("error", CharacterPredicate.any(), LexAction.SHIFT)
+            .add("string-escape", Characters.any(), LexAction.SHIFT, "error")
+            .add("error", Characters.any(), LexAction.SHIFT)
             .build());
 
         List<String> tokenList = tokenizer.lex("'hello world''oops'").toList();
@@ -109,12 +125,12 @@ public class TokenizerTest {
 
     @Test
     public void tokenOption() {
-        CharacterPredicate digit = CharacterPredicate.inclusive('0', '9');
-        CharacterPredicate lower = CharacterPredicate.inclusive('a', 'z');
-        CharacterPredicate space = CharacterPredicate.of(' ');
-        CharacterPredicate upper = CharacterPredicate.inclusive('A', 'Z');
+        CharacterPredicate digit = Characters.inclusive('0', '9');
+        CharacterPredicate lower = Characters.inclusive('a', 'z');
+        CharacterPredicate space = Characters.of(' ');
+        CharacterPredicate upper = Characters.inclusive('A', 'Z');
 
-        Tokenizer<String> tokenizer = new Tokenizer<>(LexStateMachine
+        Tokenizer<String, String> tokenizer = new Tokenizer<>(LexStateMachine
             .builder("start", (state, text, _) -> {
                 if (text.isEmpty() || "space".equals(state) || "error".equals(state)) {
                     return Option.none();
@@ -124,21 +140,21 @@ public class TokenizerTest {
             .add(space, LexAction.SHIFT, "space")
             .add(digit, LexAction.SHIFT, "integer")
             .add(List.of(upper, lower), LexAction.SHIFT, "identifier")
-            .add(CharacterPredicate.any(), LexAction.SHIFT, "error")
+            .add(Characters.any(), LexAction.SHIFT, "error")
             .begin("space")
             .add(space, LexAction.SHIFT)
-            .add(CharacterPredicate.any(), LexAction.REDUCE, "start")
+            .add(Characters.any(), LexAction.REDUCE, "start")
             .begin("integer")
             .add(digit, LexAction.SHIFT)
-            .add(CharacterPredicate.any(), LexAction.REDUCE, "start")
+            .add(Characters.any(), LexAction.REDUCE, "start")
             .begin("identifier")
             .add(List.of(upper, lower), LexAction.SHIFT)
-            .add(CharacterPredicate.any(), LexAction.REDUCE, "start")
+            .add(Characters.any(), LexAction.REDUCE, "start")
             .begin("error")
             .add(space, LexAction.REDUCE, "start")
             .add(digit, LexAction.REDUCE, "start")
             .add(List.of(upper, lower), LexAction.REDUCE, "start")
-            .add(CharacterPredicate.any(), LexAction.SHIFT)
+            .add(Characters.any(), LexAction.SHIFT)
             .build());
         List<String> tokenList = tokenizer.lex("hello world 123").toList();
         Assert.assertEquals(tokenList, List.of("hello", "world", "123"));
@@ -153,7 +169,17 @@ public class TokenizerTest {
     public void unknownState() {
         LexStateMachine
             .builder("start")
-            .add("start", CharacterPredicate.any(), LexAction.SHIFT, "oops")
+            .add("start", Characters.any(), LexAction.SHIFT, "oops")
             .build();
+    }
+
+    @Test(expectedExceptions = LexException.class)
+    public void nullToken() {
+        LexStateMachine<Integer, String> machine = LexStateMachine
+            .builder(0, (TokenFactory<Integer, String>) (_, _, _) -> null)
+            .add(Characters.any(), LexAction.SHIFT)
+            .build();
+        machine.process(null, 'a');
+        machine.consume(_ -> true);
     }
 }

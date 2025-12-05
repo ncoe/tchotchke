@@ -11,18 +11,19 @@ import java.util.stream.Stream;
 /**
  * State based tokenizer
  *
+ * @param <S> the type of state
  * @param <T> the type of token
  */
 @SuppressWarnings("ClassCanBeRecord")
-public final class Tokenizer<T> {
-    private final LexStateMachine<T> stateMachine;
+public final class Tokenizer<S, T> {
+    private final LexStateMachine<S, T> stateMachine;
 
     /**
      * Constructor
      *
      * @param stateMachine the state machine
      */
-    public Tokenizer(LexStateMachine<T> stateMachine) {
+    public Tokenizer(LexStateMachine<S, T> stateMachine) {
         this.stateMachine = stateMachine;
     }
 
