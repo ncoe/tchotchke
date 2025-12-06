@@ -93,7 +93,7 @@ public final class LexStateMachine<S, T> {
     private boolean process(Predicate<T> downstream, char ch, int depth) {
         List<Entry<S>> entryList = stateMap.get(state);
         Assertion.notNull(entryList, "Unexpected state: %d", state);
-        Assertion.isLess(depth, 2, "Bailing from potential stack overflow in state %s", state);
+        Assertion.isLess(depth, 3, "Bailing from potential stack overflow in state %s", state);
 
         S prev = state;
         for (Entry<S> entry : entryList) {
@@ -101,6 +101,7 @@ public final class LexStateMachine<S, T> {
                 state = entry.next;
 
                 return switch (entry.action) {
+                    case DEFER -> process(downstream, ch, depth + 1);
                     case REDUCE -> {
                         String text = consume();
                         Option<T> tokenOpt = factory.invoke(prev, text, false);

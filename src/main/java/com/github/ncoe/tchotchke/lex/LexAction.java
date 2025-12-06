@@ -9,6 +9,10 @@ package com.github.ncoe.tchotchke.lex;
  */
 public enum LexAction {
     /**
+     * Defer considering the character until after the state transition.
+     */
+    DEFER,
+    /**
      * The current text is a token. Reset before adding the character.
      */
     REDUCE,

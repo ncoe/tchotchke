@@ -50,6 +50,25 @@ public class OptionTest {
     }
 
     @Test
+    public void coverByte() {
+        OptionByte.some((byte) 42).ifPresent(value -> Assert.assertEquals(value, 42));
+        OptionByte.some((byte) 42).ifPresentOrElse(value -> Assert.assertEquals(value, 42), Assert::fail);
+        Assert.assertEquals(OptionByte.some((byte) 42).stream().count(), 1);
+        Assert.assertEquals(OptionByte.some((byte) 42).orElse((byte) 154), 42);
+        Assert.assertEquals(OptionByte.some((byte) 42).orElseGet(() -> (byte) 154), 42);
+        Assert.assertEquals(OptionByte.some((byte) 42).orElseThrow(), 42);
+        Assert.assertEquals(OptionByte.some((byte) 42).orElseThrow(IllegalArgumentException::new), 42);
+
+        OptionByte.none().ifPresent(_ -> Assert.fail());
+        OptionByte.none().ifPresentOrElse(_ -> Assert.fail(), Functions.doNothing());
+        Assert.assertEquals(OptionByte.none().stream().count(), 0);
+        Assert.assertEquals(OptionByte.none().orElse((byte) 154), (byte) 154);
+        Assert.assertEquals(OptionByte.none().orElseGet(() -> (byte) 154), (byte) 154);
+        Assert.assertThrows(NoSuchElementException.class, () -> OptionByte.none().orElseThrow());
+        Assert.assertThrows(IllegalArgumentException.class, () -> OptionByte.none().orElseThrow(IllegalArgumentException::new));
+    }
+
+    @Test
     public void coverChar() {
         OptionChar.some('a').ifPresent(value -> Assert.assertEquals(value, 'a'));
         OptionChar.some('b').ifPresentOrElse(value -> Assert.assertEquals(value, 'b'), Assert::fail);
@@ -104,5 +123,24 @@ public class OptionTest {
         Assert.assertEquals(OptionLong.none().orElseGet(() -> 154), 154);
         Assert.assertThrows(NoSuchElementException.class, () -> OptionLong.none().orElseThrow());
         Assert.assertThrows(IllegalArgumentException.class, () -> OptionLong.none().orElseThrow(IllegalArgumentException::new));
+    }
+
+    @Test
+    public void coverShort() {
+        OptionShort.some((short) 42).ifPresent(value -> Assert.assertEquals(value, 42));
+        OptionShort.some((short) 42).ifPresentOrElse(value -> Assert.assertEquals(value, 42), Assert::fail);
+        Assert.assertEquals(OptionShort.some((short) 42).stream().count(), 1);
+        Assert.assertEquals(OptionShort.some((short) 42).orElse((short) 154), 42);
+        Assert.assertEquals(OptionShort.some((short) 42).orElseGet(() -> (short) 154), 42);
+        Assert.assertEquals(OptionShort.some((short) 42).orElseThrow(), 42);
+        Assert.assertEquals(OptionShort.some((short) 42).orElseThrow(IllegalArgumentException::new), 42);
+
+        OptionShort.none().ifPresent(_ -> Assert.fail());
+        OptionShort.none().ifPresentOrElse(_ -> Assert.fail(), Functions.doNothing());
+        Assert.assertEquals(OptionShort.none().stream().count(), 0);
+        Assert.assertEquals(OptionShort.none().orElse((short) 154), 154);
+        Assert.assertEquals(OptionShort.none().orElseGet(() -> (short) 154), 154);
+        Assert.assertThrows(NoSuchElementException.class, () -> OptionShort.none().orElseThrow());
+        Assert.assertThrows(IllegalArgumentException.class, () -> OptionShort.none().orElseThrow(IllegalArgumentException::new));
     }
 }

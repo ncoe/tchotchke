@@ -182,4 +182,19 @@ public class TokenizerTest {
         machine.process(null, 'a');
         machine.consume(_ -> true);
     }
+
+    @Test
+    public void defer() {
+        LexStateMachine<Integer, String> machine = LexStateMachine
+            .builder(0)
+            .add(Characters.UPPER, LexAction.SHIFT, 1)
+            .add(Characters.any(), LexAction.SHIFT_REDUCE)
+            .begin(1)
+            .add(Characters.LOWER, LexAction.DEFER, 0)
+            .add(Characters.UPPER, LexAction.SHIFT)
+            .add(Characters.any(), LexAction.REDUCE)
+            .build();
+        machine.process(null, 'A');
+        machine.process(_ -> true, 'b');
+    }
 }

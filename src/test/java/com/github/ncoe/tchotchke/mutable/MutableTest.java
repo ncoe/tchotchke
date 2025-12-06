@@ -54,6 +54,49 @@ public class MutableTest {
 
     @SuppressWarnings({"ConstantValue", "EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
     @Test
+    public void mutByte() {
+        MutableByte refA = new MutableByte();
+
+        Assert.assertEquals(refA.intValue(), 0);
+        Assert.assertEquals(refA.longValue(), 0);
+        Assert.assertEquals(refA.floatValue(), 0);
+        Assert.assertEquals(refA.doubleValue(), 0);
+
+        Assert.assertEquals(refA.hashCode(), 0);
+        Assert.assertEquals(refA.toString(), "0");
+
+        MutableByte refB = new MutableByte((byte) 1);
+
+        Assert.assertEquals(refA.compareTo(refB), -1);
+
+        Assert.assertFalse(refA.equals(null));
+        Assert.assertTrue(refA.equals((byte) 0));
+        Assert.assertTrue(refA.equals(0.0));
+        Assert.assertTrue(refA.equals(refA));
+        Assert.assertFalse(refA.equals((byte) 1));
+        Assert.assertFalse(refA.equals(1.0));
+        Assert.assertFalse(refA.equals(refB));
+        Assert.assertFalse(refA.equals('a'));
+
+        Assert.assertEquals(refA.getAsByte(), 0);
+        refA.accept((byte) 1);
+        Assert.assertEquals(refA.getAsByte(), 1);
+
+        Assert.assertEquals(refA.incrementAndGet(), 2);
+        Assert.assertEquals(refA.getAndIncrement(), 2);
+
+        Assert.assertEquals(refA.decrementAndGet(), 2);
+        Assert.assertEquals(refA.getAndDecrement(), 2);
+
+        Assert.assertEquals(refA.addAndGet((byte) 2), 3);
+        Assert.assertEquals(refA.getAndAdd((byte) 2), 3);
+
+        Assert.assertEquals(refA.accumulateAndGet((left, right) -> (byte) (left * right), (byte) 3), 15);
+        Assert.assertEquals(refA.getAndAccumulate((left, right) -> (byte) (left / right), (byte) 3), 15);
+    }
+
+    @SuppressWarnings({"ConstantValue", "EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
+    @Test
     public void mutChar() {
         MutableChar refA = new MutableChar('a');
         Assert.assertEquals(refA.toString(), "a");
@@ -180,6 +223,49 @@ public class MutableTest {
         Assert.assertFalse(refA.equals("Huge Success!!"));
 
         Assert.assertTrue(refA.equals(refB));
+    }
+
+    @SuppressWarnings({"ConstantValue", "EqualsBetweenInconvertibleTypes", "EqualsWithItself", "SimplifiableAssertion"})
+    @Test
+    public void mutShort() {
+        MutableShort refA = new MutableShort();
+
+        Assert.assertEquals(refA.intValue(), 0);
+        Assert.assertEquals(refA.longValue(), 0);
+        Assert.assertEquals(refA.floatValue(), 0);
+        Assert.assertEquals(refA.doubleValue(), 0);
+
+        Assert.assertEquals(refA.hashCode(), 0);
+        Assert.assertEquals(refA.toString(), "0");
+
+        MutableShort refB = new MutableShort((short) 1);
+
+        Assert.assertEquals(refA.compareTo(refB), -1);
+
+        Assert.assertFalse(refA.equals(null));
+        Assert.assertTrue(refA.equals((short) 0));
+        Assert.assertTrue(refA.equals(0.0));
+        Assert.assertTrue(refA.equals(refA));
+        Assert.assertFalse(refA.equals((short) 1));
+        Assert.assertFalse(refA.equals(1.0));
+        Assert.assertFalse(refA.equals(refB));
+        Assert.assertFalse(refA.equals('a'));
+
+        Assert.assertEquals(refA.getAsShort(), 0);
+        refA.accept((short) 1);
+        Assert.assertEquals(refA.getAsShort(), 1);
+
+        Assert.assertEquals(refA.incrementAndGet(), 2);
+        Assert.assertEquals(refA.getAndIncrement(), 2);
+
+        Assert.assertEquals(refA.decrementAndGet(), 2);
+        Assert.assertEquals(refA.getAndDecrement(), 2);
+
+        Assert.assertEquals(refA.addAndGet((short) 2), 3);
+        Assert.assertEquals(refA.getAndAdd((short) 2), 3);
+
+        Assert.assertEquals(refA.accumulateAndGet((left, right) -> (short) (left * right), (short) 3), 15);
+        Assert.assertEquals(refA.getAndAccumulate((left, right) -> (short) (left / right), (short) 3), 15);
     }
 
     @Test
